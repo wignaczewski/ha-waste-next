@@ -1,6 +1,6 @@
 # ============================================================
 #  Waste Next - następny wywóz śmieci w jednej encji
-#  https://github.com/<twoj-login>/ha-waste-next
+#  https://github.com/wignaczewski/ha-waste-next
 # ============================================================
 #  Pakiet Home Assistant. Tworzy encję `sensor.nastepny_wywoz_smieci`,
 #  która pokazuje najbliższą frakcję odpadów na podstawie kalendarza
