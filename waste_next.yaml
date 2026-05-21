@@ -1,0 +1,92 @@
+# ============================================================
+#  Waste Next - następny wywóz śmieci w jednej encji
+#  https://github.com/<twoj-login>/ha-waste-next
+# ============================================================
+#  Pakiet Home Assistant. Tworzy encję `sensor.nastepny_wywoz_smieci`,
+#  która pokazuje najbliższą frakcję odpadów na podstawie kalendarza
+#  z integracji Waste Collection Schedule (HACS).
+#
+#  >>> ZANIM UŻYJESZ - dostosuj 2 rzeczy (patrz README):
+#  1. Zamień `calendar.wywoz_smieci` na nazwę swojego kalendarza.
+#     Występuje w 4 miejscach w tym pliku.
+#  2. Sprawdź, czy klucze w słownikach (BIO, Papier, Tworzywa,
+#     Zmieszane, Pozostałe) zgadzają się DOKŁADNIE z nazwami
+#     wydarzeń w Twoim kalendarzu.
+# ============================================================
+
+template:
+  - trigger:
+      - platform: time_pattern
+        minutes: 0
+      - platform: homeassistant
+        event: start
+    action:
+      - service: calendar.get_events
+        target:
+          entity_id: calendar.wywoz_smieci
+        data:
+          duration:
+            hours: 720
+        response_variable: response
+    sensor:
+      - name: "Następny wywóz śmieci"
+        unique_id: nastepny_wywoz_smieci
+        state: >-
+          {% set events = response['calendar.wywoz_smieci'].events %}
+          {% set po16 = now().hour >= 16 %}
+          {% set today = now().date() %}
+          {% set ns = namespace(out='Brak') %}
+          {% for ev in events if ns.out == 'Brak' %}
+            {% set d = ((ev.start | as_datetime | as_local).date() - today).days %}
+            {% if d > 0 or (d == 0 and not po16) %}{% set ns.out = ev.summary | trim %}{% endif %}
+          {% endfor %}
+          {{ ns.out }}
+        icon: >-
+          {{ {'BIO':'mdi:flower',
+              'Papier':'mdi:newspaper',
+              'Tworzywa':'mdi:recycle-variant',
+              'Zmieszane':'mdi:trash-can-outline',
+              'Pozostałe':'mdi:dump-truck'
+             }.get(states('sensor.nastepny_wywoz_smieci'), 'mdi:trash-can') }}
+        attributes:
+          icon_color: >-
+            {{ {'BIO':'light-green',
+                'Papier':'blue',
+                'Tworzywa':'orange',
+                'Zmieszane':'grey',
+                'Pozostałe':'purple'
+               }.get(states('sensor.nastepny_wywoz_smieci'), 'disabled') }}
+          dni: >-
+            {% set events = response['calendar.wywoz_smieci'].events %}
+            {% set po16 = now().hour >= 16 %}
+            {% set today = now().date() %}
+            {% set ns = namespace(d=none) %}
+            {% for ev in events if ns.d is none %}
+              {% set diff = ((ev.start | as_datetime | as_local).date() - today).days %}
+              {% if diff > 0 or (diff == 0 and not po16) %}{% set ns.d = diff %}{% endif %}
+            {% endfor %}
+            {{ ns.d }}
+          data: >-
+            {% set events = response['calendar.wywoz_smieci'].events %}
+            {% set po16 = now().hour >= 16 %}
+            {% set today = now().date() %}
+            {% set ns = namespace(dt=none) %}
+            {% for ev in events if ns.dt is none %}
+              {% set ev_date = (ev.start | as_datetime | as_local).date() %}
+              {% set diff = (ev_date - today).days %}
+              {% if diff > 0 or (diff == 0 and not po16) %}{% set ns.dt = ev_date %}{% endif %}
+            {% endfor %}
+            {{ ns.dt }}
+          opis: >-
+            {% set events = response['calendar.wywoz_smieci'].events %}
+            {% set po16 = now().hour >= 16 %}
+            {% set today = now().date() %}
+            {% set ns = namespace(d=none) %}
+            {% for ev in events if ns.d is none %}
+              {% set diff = ((ev.start | as_datetime | as_local).date() - today).days %}
+              {% if diff > 0 or (diff == 0 and not po16) %}{% set ns.d = diff %}{% endif %}
+            {% endfor %}
+            {% if ns.d == 0 %}Dziś
+            {% elif ns.d == 1 %}Jutro
+            {% elif ns.d is number %}Za {{ ns.d }} dni
+            {% else %}Brak{% endif %}

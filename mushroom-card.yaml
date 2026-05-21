@@ -1,0 +1,11 @@
+# Przykładowa karta dla dashboardu (wymaga karty Mushroom z HACS).
+# Skopiuj zawartość do edytora karty w trybie YAML.
+
+type: custom:mushroom-template-card
+entity: sensor.nastepny_wywoz_smieci
+primary: "{{ states('sensor.nastepny_wywoz_smieci') }}"
+secondary: "{{ state_attr('sensor.nastepny_wywoz_smieci','opis') }}"
+icon: "{{ state_icon('sensor.nastepny_wywoz_smieci') }}"
+icon_color: "{{ state_attr('sensor.nastepny_wywoz_smieci','icon_color') }}"
+tap_action:
+  action: more-info
