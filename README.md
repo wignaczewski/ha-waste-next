@@ -28,12 +28,12 @@ od razu kolejny termin.
 
 ## Wymagania
 
-- Home Assistant
+- Home Assistant OS
 - Integracja Waste Collection Schedule z **włączonym kalendarzem** (`calendar.*`)
 
 ---
 
-## Instalacja
+## Instalacja ręczna
 
 Ten projekt to **pakiet** (*package*) Home Assistant — osobny plik
 konfiguracyjny. Nie wklejasz nic do `configuration.yaml` poza jedną
@@ -50,7 +50,8 @@ Jeśli masz już sekcję `homeassistant:` — dopisz tylko linię `packages:`.
 
 **2. Utwórz folder `packages`** obok pliku `configuration.yaml`.
 
-**3. Wrzuć plik `waste_next.yaml`** do folderu `packages`.
+**3. Wrzuć plik `packages/waste_next.yaml`** z tego repozytorium
+do folderu `packages` na swoim HA.
 
 **4. Dostosuj plik** — patrz sekcja *Konfiguracja* niżej.
 
@@ -59,9 +60,58 @@ Jeśli masz już sekcję `homeassistant:` — dopisz tylko linię `packages:`.
 
 ---
 
+## Automatyczna synchronizacja (dodatek Git pull)
+
+Jeśli chcesz, żeby zmiany z GitHub trafiały na HA automatycznie
+(bez ręcznego kopiowania pliku), użyj oficjalnego dodatku **Git pull**.
+
+### Jednorazowa konfiguracja
+
+**1.** Zainstaluj dodatek:
+Ustawienia → Dodatki → Sklep → wyszukaj **Git pull** → Zainstaluj.
+
+**2.** Skonfiguruj dodatek (zakładka *Konfiguracja*):
+
+```yaml
+repository: https://github.com/wignaczewski/ha-waste-next
+auto_restart: false
+repeat:
+  active: true
+  interval: 300
+```
+
+`interval: 300` oznacza sprawdzanie co 5 minut. Możesz zmienić np. na `3600`
+(co godzinę).
+
+**3.** Uruchom dodatek → zakładka *Dziennik* — powinien pojawić się komunikat
+o pomyślnym pobraniu repozytorium.
+
+Po tym kroku plik `packages/waste_next.yaml` trafi automatycznie
+do `/config/packages/` na Twoim HA.
+
+**4.** Jeśli jeszcze nie masz włączonych pakietów, dodaj do `configuration.yaml`:
+
+```yaml
+homeassistant:
+  packages: !include_dir_named packages
+```
+
+**5.** Zrestartuj HA (pierwsze uruchomienie pakietu wymaga restartu).
+
+### Testowanie zmian po pushu
+
+Po każdym pushu na GitHub wystarczy:
+
+1. Odczekać do 5 minut (lub wejść w dodatek Git pull → **Uruchom ponownie**,
+   żeby wymusić natychmiastowe pobranie).
+2. Developer Tools → YAML → **Przeładuj szablony** (nie trzeba restartować HA).
+3. Sprawdzić encję `sensor.nastepny_wywoz_smieci` w Developer Tools → States.
+
+---
+
 ## Konfiguracja
 
-Otwórz `waste_next.yaml` i zmień dwie rzeczy:
+Otwórz `packages/waste_next.yaml` i zmień dwie rzeczy:
 
 1. **Nazwa kalendarza.** Zamień `calendar.wywoz_smieci` na nazwę swojego
    kalendarza (Developer Tools → States). Występuje w **4 miejscach**.
@@ -96,9 +146,8 @@ Gotowy przykład znajdziesz w [`examples/mushroom-card.yaml`](examples/mushroom-
 ## Czy to działa przez HACS?
 
 Nie. HACS instaluje integracje (Python) oraz karty (JavaScript) — nie
-instaluje pakietów YAML. Ten projekt instaluje się ręcznie: kopiujesz
-jeden plik. Jeśli zależy Ci na instalacji „jednym kliknięciem" w HACS,
-ten sam pomysł trzeba przepisać na pełną integrację w Pythonie.
+instaluje pakietów YAML. Ten projekt instaluje się ręcznie lub przez
+dodatek Git pull (patrz wyżej).
 
 ---
 
